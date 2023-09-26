@@ -1,0 +1,35 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: checkout
+spec:
+  params:
+    - name: url
+      type: string
+    - name: revision
+      type: string
+  stepTemplate:
+    env:
+      - name: HOME
+        value: /tekton/home
+    computeResources:
+      limits:
+        cpu: '1'
+        memory: 4Gi
+      requests:
+        cpu: 100m
+        memory: 2Gi
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1001
+  steps:
+    - name: git-clone
+      image: 'alpine/git:latest'
+      
+      script: |-
+        #!/usr/bin/env sh
+
+        git clone $(params.url) $(workspaces.output.path)/project
+  workspaces:
+    - name: output
+      description: The git repo will be cloned onto the volume backing this workspace

@@ -1,0 +1,28 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: demoapp-build-test
+spec:
+  pipelineRef:
+    name: maven
+  params:
+    - name: git-url
+      value: "https://github.com/jholtan/demoapp.git"
+    - name: git-revision
+      value: "master"
+  taskRunTemplate:
+    serviceAccountName: "tekton-robot"
+    podTemplate:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteMany
+          resources:
+            requests:
+              storage: 2Gi

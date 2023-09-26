@@ -1,0 +1,41 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: mvn-dependencies
+spec:
+  description: This task download Maven dependencies
+  params:
+    - name: image
+      type: string
+      default: "maven:3.9.4-eclipse-temurin-17"
+  stepTemplate:
+    image: $(params.image)
+    imagePullPolicy: IfNotPresent
+    env:
+      - name: HOME
+        value: $(workspaces.output.path)
+    computeResources:
+      limits:
+        cpu: '1'
+        memory: 4Gi
+      requests:
+        cpu: 100m
+        memory: 2Gi
+  steps:
+    - name: maven-deps
+      script: |-
+        #!/usr/bin/env sh
+        echo "HOME: ${HOME}"
+        cd $(workspaces.output.path)/project
+        echo "Maven info:"
+        mvn -v
+
+        echo "Starting"
+        mvn dependency:go-offline -Dmaven.repo.local=$(workspaces.output.path)/dependencies
+        echo "Build finished"
+
+        ls $(workspaces.output.path)
+
+  workspaces:
+    - name: output
+      description: The volume to write dependencies to

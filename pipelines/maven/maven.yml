@@ -1,0 +1,44 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: maven
+spec:
+  description: >-
+    This pipeline builds and uploads an image to the image registry
+
+  workspaces:
+    - name: shared-workspace
+
+  params:
+    - name: git-url
+    - name: git-revision
+
+  tasks:
+    - name: checkout
+      taskRef:
+        kind: Task
+        name: checkout
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: revision
+          value: $(params.git-revision)
+    - name: download-dependencies
+      taskRef:
+        name: mvn-dependencies
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+      runAfter:
+        - checkout
+    - name: build
+      taskRef:
+        name: mvn-build
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+      runAfter:
+        - download-dependencies 

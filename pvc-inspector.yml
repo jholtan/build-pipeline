@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "pvc-inspector"
+spec:
+  containers:
+  - name: pvc-inspector
+    image: "maven:3.9.4-eclipse-temurin-17"
+    command: ["tail"]
+    args: ["-f", "/dev/null"]
+    volumeMounts:
+    - name: pvc-mount
+      mountPath: /pvc
+  volumes:
+    - name: pvc-mount
+      persistentVolumeClaim:
+        claimName: pvc-57a090530a
+---
+

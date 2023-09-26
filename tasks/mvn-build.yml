@@ -1,0 +1,53 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: mvn-build
+spec:
+  description: This task uses Maven to build the application
+  params:
+    - name: image
+      type: string
+      default: "maven:3.9.4-eclipse-temurin-17"
+  stepTemplate:
+    image: $(params.image)
+    imagePullPolicy: IfNotPresent
+    env:
+      - name: HOME
+        value: $(workspaces.output.path)
+    computeResources:
+      limits:
+        cpu: '1'
+        memory: 4Gi
+      requests:
+        cpu: 100m
+        memory: 2Gi
+  steps:
+    - name: pre-check
+      script: |-
+        #!/usr/bin/env bash
+        cd $(workspaces.output.path)/project
+        if [[ ! -f pom.xml ]]; then
+          echo "Missing pom.xml in project root. Exiting"
+          exit 0
+        fi
+    - name: maven-build
+      script: |-
+        #!/usr/bin/env sh
+        echo "HOME: ${HOME}"
+        echo "Maven info:"
+        mvn -v
+
+        echo "Starting build"
+        cd $(workspaces.output.path)/project
+        mvn -o verify -Dmaven.repo.local=$(workspaces.output.path)/dependencies
+        echo "Build finished"
+    - name: store-artifact
+      script: |-
+        #!/usr/bin/env sh
+        echo "Storing artifact to workspace"
+        cd $(workspaces.output.path)/project
+        cp target/*.jar $(workspaces.output.path)/artifacts
+
+  workspaces:
+    - name: output
+      description: The volume to write the artifacts to
